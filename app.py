@@ -1,12 +1,35 @@
 from flask import Flask, render_template, url_for, flash, redirect
 app = Flask(__name__)
 import json, forms
-from pymongo import MongoClient
-
-client = MongoClient("mongodb://localhost:27017")
-db = client.flask_blog
+from datetime import datetime
+from flask_sqlalchemy import SQLAlchemy
 
 app.config['SECRET_KEY'] = '959d21577205efa16538037a'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
+db = SQLAlchemy(app)
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(20), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    image_file = db.Column(db.String(20), nullable=False, default='default.jpg')
+    password = db.Column(db.String(60), nullable=False)
+    posts = db.relationship('Post', backref='author', lazy=True)
+
+    def __repr__(self):
+        return f"User('{self.username}', '{self.email}', '{self.image_file}')"
+
+
+class Post(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    content = db.Column(db.Text, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    def __repr__(self):
+        return f"Post('{self.title}', '{self.date_posted}')"
+
 
 with open('posts.json') as json_set:
     posts = json.load(json_set)
@@ -24,12 +47,6 @@ def about():
 def register():
     form = forms.RegistrationForm()
     if form.validate_on_submit():
-        newUser = {
-            "username": form.username.data,
-            "email": form.email.data,
-            "password": form.password.data
-        }
-        db.users.insert_one(newUser)
         flash(f"Account created for { form.username.data }!", category="success")
         return redirect('/')
     return render_template('register.html', title="Register", form=form)
@@ -38,11 +55,7 @@ def register():
 def login():
     form = forms.LoginForm()
     if form.validate_on_submit():
-
-        user = db.users.find_one({"email": form.email.data})
-        if not user:
-            flash("User does not exist", "danger")
-        elif form.password.data == user['password']:
+        if form.email.data == "test@example.com" and form.password.data == "hello":
             flash('You have been logged in!', 'success')
             return redirect('/')
         else:
