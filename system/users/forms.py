@@ -1,10 +1,9 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, BooleanField, TextAreaField
+from wtforms import StringField, PasswordField, SubmitField, BooleanField
 from flask_wtf.file import FileField, FileAllowed
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
 from system import models
 from flask_login import current_user
-
 
 class RegistrationForm(FlaskForm):
     username = StringField('Username',
@@ -57,11 +56,6 @@ class UpdateForm(FlaskForm):
 
             if user:
                 raise ValidationError('This email is already registered.')
-
-class PostForm(FlaskForm):
-    title = StringField('Title', validators=[DataRequired()])
-    content = TextAreaField('Content', validators=[DataRequired()])
-    submit = SubmitField('Post')
 
 class RequestResetForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
